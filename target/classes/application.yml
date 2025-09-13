@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: auth-spring-api
+  
+  main:
+    allow-circular-references: true
+  
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+  security:
+    user:
+      name: admin
+      password: admin
+
+server:
+  port: 8080
+
+# JWT Configuration
+jwt:
+  secret: dGhpcyBpcyBhIHZlcnkgc2VjdXJlIGp3dCBzZWNyZXQgZm9yIHRlc3RpbmcgcHVycG9zZXM=
+  expiration: 1800000  # 30 minutes in milliseconds
+  refresh-expiration: 604800000  # 7 days in milliseconds
+
+# CORS Configuration
+cors:
+  allowed-origins:
+    - http://localhost:3000
+    - https://auth-template-phi.vercel.app
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowed-headers:
+    - "*"
+  allow-credentials: true
+
+logging:
+  level:
+    com.example.authapi: DEBUG
+    org.springframework.security: DEBUG
