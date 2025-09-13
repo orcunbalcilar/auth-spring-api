@@ -1,5 +1,7 @@
 # Auth Spring API
 
+[![Deploy to Render](https://github.com/orcunbalcilar/auth-spring-api/actions/workflows/deploy.yml/badge.svg)](https://github.com/orcunbalcilar/auth-spring-api/actions/workflows/deploy.yml)
+
 A modern Spring Boot authentication API with JWT tokens, built with the latest versions of Spring Boot 3.x and Java 21.
 
 ## Features
@@ -178,6 +180,18 @@ mvn test
 ```
 
 ## Production Deployment
+
+### Automatic Deployment to Render
+
+This project is configured for automatic deployment to Render using GitHub Actions:
+
+- **Trigger**: Every push to the `main` branch
+- **Process**: Tests → Build → Docker Test → Deploy
+- **Status**: Check the badge above for deployment status
+
+For setup instructions, see [`GITHUB_ACTIONS_SETUP.md`](GITHUB_ACTIONS_SETUP.md).
+
+### Manual Deployment
 
 1. **Build the application**:
    ```bash
