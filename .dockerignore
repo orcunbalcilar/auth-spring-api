@@ -1,0 +1,14 @@
+target/
+.git
+.gitignore
+README.md
+DEPLOYMENT_GUIDE.md
+SETUP_SUMMARY.md
+API_DOCUMENTATION.md
+JUNIE.md
+render.yaml
+cookies.txt
+.DS_Store
+*.log
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
