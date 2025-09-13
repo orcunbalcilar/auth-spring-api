@@ -1,13 +1,7 @@
 package com.example.authapi.service;
 
-import com.example.authapi.dto.AuthResponse;
-import com.example.authapi.dto.LoginRequest;
-import com.example.authapi.dto.RegisterRequest;
-import com.example.authapi.dto.UserInfo;
+import com.example.authapi.dto.*;
 import com.example.authapi.entity.User;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,68 +9,69 @@ public class AuthService {
     
     private final UserService userService;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
     
-    public AuthService(
-            UserService userService,
-            JwtService jwtService,
-            AuthenticationManager authenticationManager
-    ) {
+    public AuthService(UserService userService, JwtService jwtService) {
         this.userService = userService;
         this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager;
     }
     
-    public AuthResponse register(RegisterRequest request) {
-        User user = userService.createUser(request);
-        
-        String accessToken = jwtService.generateToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
-        
-        return AuthResponse.of(
-                accessToken,
-                refreshToken,
-                jwtService.getJwtExpiration(),
-                UserInfo.from(user)
-        );
-    }
-    
-    public AuthResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.username(),
-                        request.password()
-                )
-        );
-        
-        User user = (User) authentication.getPrincipal();
-        
-        String accessToken = jwtService.generateToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
-        
-        return AuthResponse.of(
-                accessToken,
-                refreshToken,
-                jwtService.getJwtExpiration(),
-                UserInfo.from(user)
-        );
-    }
-    
-    public AuthResponse refreshToken(String refreshToken) {
-        String username = jwtService.extractUsername(refreshToken);
-        User user = userService.findByUsername(username);
-        
-        if (jwtService.isTokenValid(refreshToken, user)) {
-            String accessToken = jwtService.generateToken(user);
-            
-            return AuthResponse.of(
-                    accessToken,
-                    refreshToken,
-                    jwtService.getJwtExpiration(),
-                    UserInfo.from(user)
-            );
+    public LoginResponse login(LoginRequest request) {
+        // Validate input
+        if (request.email() == null || request.email().isBlank() || 
+            request.password() == null || request.password().isBlank()) {
+            throw new IllegalArgumentException("Email and password are required");
         }
         
-        throw new IllegalArgumentException("Invalid refresh token");
+        // Authenticate user with plain text password comparison (for mock data)
+        if (!userService.authenticateUser(request.email(), request.password())) {
+            throw new IllegalArgumentException("Invalid credentials");
+        }
+        
+        // Find user
+        User user = userService.findByEmail(request.email());
+        
+        // Generate access token with session start time and constant lifetime
+        String accessToken = jwtService.generateToken(user.getId().toString(), user.getEmail());
+        
+        return new LoginResponse(
+            "Login successful",
+            UserInfo.from(user)
+        );
+    }
+    
+    public LogoutResponse logout() {
+        return new LogoutResponse("Logout successful");
+    }
+    
+    public String generateAccessToken(String email) {
+        User user = userService.findByEmail(email);
+        return jwtService.generateToken(user.getId().toString(), user.getEmail());
+    }
+    
+    public VerifyResponse verify(String accessToken) {
+        if (accessToken == null || accessToken.isBlank()) {
+            throw new IllegalArgumentException("Access token not found");
+        }
+        
+        // Check if session lifetime has ended
+        if (jwtService.isSessionExpired(accessToken)) {
+            throw new IllegalArgumentException("Session expired");
+        }
+        
+        // Verify token
+        if (!jwtService.isTokenValid(accessToken)) {
+            throw new IllegalArgumentException("Invalid access token");
+        }
+        
+        String email = jwtService.extractEmail(accessToken);
+        User user = userService.findByEmail(email);
+        
+        // Calculate remaining time for response
+        long timeRemaining = jwtService.getTimeRemaining(accessToken);
+        long expiresAt = jwtService.getSessionExpiry(accessToken);
+        
+        SessionInfo sessionInfo = new SessionInfo(timeRemaining, expiresAt);
+        
+        return VerifyResponse.of(UserInfo.from(user), sessionInfo);
     }
 }

@@ -24,20 +24,17 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  
-  security:
-    user:
-      name: admin
-      password: admin
 
 server:
   port: 8080
 
 # JWT Configuration
 jwt:
-  secret: dGhpcyBpcyBhIHZlcnkgc2VjdXJlIGp3dCBzZWNyZXQgZm9yIHRlc3RpbmcgcHVycG9zZXM=
-  expiration: 1800000  # 30 minutes in milliseconds
-  refresh-expiration: 604800000  # 7 days in milliseconds
+  secret: your-secret-key
+  
+# Session Configuration
+session:
+  lifetime: 120  # Default: 2 minutes (to match Next.js implementation)
 
 # CORS Configuration
 cors:
