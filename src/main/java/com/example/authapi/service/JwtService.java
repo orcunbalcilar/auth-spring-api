@@ -40,9 +40,18 @@ public class JwtService {
     }
     
     public String generateToken(String userId, String email) {
+        return generateToken(userId, email, sessionLifetime);
+    }
+    
+    public String generateRefreshToken(String userId, String email) {
+        // Refresh tokens last longer (7 days in seconds)
+        return generateToken(userId, email, sessionLifetime * 7);
+    }
+    
+    private String generateToken(String userId, String email, Long lifetime) {
         Map<String, Object> claims = new HashMap<>();
         long sessionStart = System.currentTimeMillis() / 1000; // Unix timestamp in seconds
-        long sessionExpiry = sessionStart + sessionLifetime;
+        long sessionExpiry = sessionStart + lifetime;
         
         claims.put("userId", userId);
         claims.put("email", email);

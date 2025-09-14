@@ -30,9 +30,6 @@ public class AuthService {
         // Find user
         User user = userService.findByEmail(request.email());
         
-        // Generate access token with session start time and constant lifetime
-        String accessToken = jwtService.generateToken(user.getId().toString(), user.getEmail());
-        
         return new LoginResponse(
             "Login successful",
             UserInfo.from(user)
@@ -46,6 +43,27 @@ public class AuthService {
     public String generateAccessToken(String email) {
         User user = userService.findByEmail(email);
         return jwtService.generateToken(user.getId().toString(), user.getEmail());
+    }
+    
+    public String generateRefreshToken(String email) {
+        User user = userService.findByEmail(email);
+        return jwtService.generateRefreshToken(user.getId().toString(), user.getEmail());
+    }
+    
+    public TokenResponse refreshToken(RefreshRequest request) {
+        if (request.refreshToken() == null || request.refreshToken().isBlank()) {
+            throw new IllegalArgumentException("Refresh token is required");
+        }
+        
+        // Verify refresh token
+        if (!jwtService.isTokenValid(request.refreshToken())) {
+            throw new IllegalArgumentException("Invalid or expired refresh token");
+        }
+        
+        String email = jwtService.extractEmail(request.refreshToken());
+        String newAccessToken = generateAccessToken(email);
+        
+        return new TokenResponse(newAccessToken);
     }
     
     public VerifyResponse verify(String accessToken) {

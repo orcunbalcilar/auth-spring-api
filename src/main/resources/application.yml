@@ -30,7 +30,7 @@ server:
 
 # JWT Configuration
 jwt:
-  secret: your-secret-key
+  secret: mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLong12345
   
 # Session Configuration
 session:

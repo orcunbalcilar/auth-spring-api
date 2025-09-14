@@ -31,21 +31,26 @@ public class AuthController {
         try {
             LoginResponse loginResponse = authService.login(request);
             
-            // Generate access token
+            // Generate access token and refresh token
             String accessToken = authService.generateAccessToken(request.email());
+            String refreshToken = authService.generateRefreshToken(request.email());
             
             // Set access token cookie
             Cookie accessTokenCookie = new Cookie("access_token", accessToken);
             accessTokenCookie.setHttpOnly(true);
             accessTokenCookie.setSecure(false); // Set to true in production
             accessTokenCookie.setPath("/");
-            accessTokenCookie.setMaxAge(sessionLifetime.intValue()); // Cookie expires with session
-            // Note: setDomain is not set here, but can be added if needed
+            accessTokenCookie.setMaxAge(sessionLifetime.intValue());
+            
+            // Set refresh token cookie
+            Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
+            refreshTokenCookie.setHttpOnly(true);
+            refreshTokenCookie.setSecure(false); // Set to true in production
+            refreshTokenCookie.setPath("/");
+            refreshTokenCookie.setMaxAge(sessionLifetime.intValue() * 7); // 7 times longer than access token
             
             response.addCookie(accessTokenCookie);
-            
-            // Log response cookies (similar to Next.js console.log)
-            System.out.println("Set-Cookie: access_token=" + accessToken);
+            response.addCookie(refreshTokenCookie);
             
             return ResponseEntity.ok(loginResponse);
         } catch (IllegalArgumentException e) {
@@ -78,7 +83,15 @@ public class AuthController {
             accessTokenCookie.setPath("/");
             accessTokenCookie.setMaxAge(0);
             
+            // Clear refresh token cookie
+            Cookie refreshTokenCookie = new Cookie("refresh_token", "");
+            refreshTokenCookie.setHttpOnly(true);
+            refreshTokenCookie.setSecure(false); // Set to true in production
+            refreshTokenCookie.setPath("/");
+            refreshTokenCookie.setMaxAge(0);
+            
             response.addCookie(accessTokenCookie);
+            response.addCookie(refreshTokenCookie);
             
             return ResponseEntity.ok(logoutResponse);
         } catch (Exception e) {
@@ -110,6 +123,33 @@ public class AuthController {
             System.err.println("Token verification error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 new ErrorResponse("Invalid access token")
+            );
+        }
+    }
+    
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest request, HttpServletResponse response) {
+        try {
+            TokenResponse tokenResponse = authService.refreshToken(request);
+            
+            // Set new access token cookie
+            Cookie accessTokenCookie = new Cookie("access_token", tokenResponse.accessToken());
+            accessTokenCookie.setHttpOnly(true);
+            accessTokenCookie.setSecure(false); // Set to true in production
+            accessTokenCookie.setPath("/");
+            accessTokenCookie.setMaxAge(sessionLifetime.intValue());
+            
+            response.addCookie(accessTokenCookie);
+            
+            return ResponseEntity.ok(tokenResponse);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                new ErrorResponse(e.getMessage())
+            );
+        } catch (Exception e) {
+            System.err.println("Token refresh error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                new ErrorResponse("Failed to refresh token")
             );
         }
     }

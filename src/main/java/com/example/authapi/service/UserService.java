@@ -1,24 +1,20 @@
 package com.example.authapi.service;
 
-import com.example.authapi.dto.RegisterRequest;
 import com.example.authapi.entity.User;
 import com.example.authapi.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService implements UserDetailsService {
     
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
     }
     
     @PostConstruct
@@ -57,20 +53,6 @@ public class UserService implements UserDetailsService {
     public User findByUsername(String username) {
         return userRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-    }
-    
-    public User createUser(RegisterRequest request) {
-        if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new IllegalArgumentException("User with this email already exists");
-        }
-        
-        User user = new User();
-        user.setUsername(request.email());
-        user.setEmail(request.email());
-        user.setPassword(passwordEncoder.encode(request.password()));
-        user.setRole(User.Role.USER);
-        
-        return userRepository.save(user);
     }
     
     public boolean authenticateUser(String email, String password) {
